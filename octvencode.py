@@ -1,4 +1,5 @@
 import numpy as np
+import struct
 
 def random_volume_data(resolution: int, threshold: float) -> np.ndarray:
     """
@@ -31,7 +32,7 @@ def encode_slice_recursive(volume: np.ndarray, x_start: int, x_end: int,
     assert vol_slice.size > 0, "What"
     if is_volume_slice_homogeneous(vol_slice):
         # leaf
-        return f"l{repr(int(vol_slice.flat[0]))}"
+        return f"0{repr(int(vol_slice.flat[0]))}"
 
     x_split = [x_start, (x_start + x_end) // 2, x_end]
     y_split = [y_start, (y_start + y_end) // 2, y_end]
@@ -56,7 +57,7 @@ def encode_slice_recursive(volume: np.ndarray, x_start: int, x_end: int,
                                            y_split[y], y_split[y + 1],
                                            z_split[z], z_split[z + 1]))
     # slice
-    return f"s{" ".join(slices)}"
+    return f"1{"".join(slices)}"
 
 
 def encode(volume: np.ndarray) -> str:
@@ -98,13 +99,13 @@ def decode_slice_recursive(tokens, idx, volume, x_start, x_end, y_start, y_end,
     idx = idx + 1
 
     # leaf, read the next value
-    if token == 'L':
+    if token == '1':
         val = int(tokens[idx])
         volume[x_start:x_end, y_start:y_end, z_start:z_end] = val
         return idx + 1
 
     # split
-    if token == 'S':
+    if token == '0':
         x_split = [x_start, (x_start + x_end) // 2, x_end]
         y_split = [y_start, (y_start + y_end) // 2, y_end]
         z_split = [z_start, (z_start + z_end) // 2, z_end]
@@ -153,11 +154,32 @@ def decode(encoding: str) -> np.ndarray:
     return volume
 
 
+def to_file(data: str):
+    size, data = data.split(" ", 1)
+    pad_len = len(data) % 8
+    if pad_len:
+        pad = '0' * (8 - pad_len)
+        data = pad + data
+    
+    int_data = [int(data[i:i+8], 2) for i in range(0, len(data), 8)]
+    byte_data = bytes(int_data)
+    
+    with open("file.dat", "wb") as f:
+        f.write(struct.pack("<H", int(size)))
+        f.write(b'\x00')
+        f.write(byte_data)
+
+def from_file(filename):
+    pass
+
 data_file = "./samples/sparse.dat"
 with open(data_file, 'r', encoding='utf-8') as f:
     encoded = f.readlines()[0]
     volume = decode(encoded)
-    print(volume.flatten().tolist())
+    to_file(encode(volume))
+    
+
+    # print(volume.flatten().tolist())
 
     # lines = f.readlines()
     # hex_str = lines[0].strip()
@@ -169,3 +191,9 @@ with open(data_file, 'r', encoding='utf-8') as f:
     # encoded = encode(volume)
     # with open("output.dat", "w", encoding="utf-8") as f:
     #     f.write(encoded)
+    
+    
+# read 2 bytes for volume size
+# read until you encounter a 1 (first split)
+# if not 1 is encountered, or a 1 is the last bit
+# its a leaf with value 0 or 1 respectively
