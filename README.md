@@ -15,7 +15,7 @@ The volume restrictions are as follows:
 The volume is encoded as follows:
 ```
 00000000  00000100  00001111  10110000  ...
-└───────┬────────┘  └┬─┘└─────────┬──┘
+└───────┬────────┘  └┬─┘└─────────┬────────
         ┆            ┆            ┆
 2 bytes denoting   extra padding  ┆
 the edge length,                  ┆
