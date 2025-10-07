@@ -1,0 +1,23 @@
+[build-system]
+requires = ["hatchling >= 1.26"]
+build-backend = "hatchling.build"
+
+[project]
+name = "octvencode"
+version = "0.0.1"
+authors = [
+  { name="Ekre Ceannmor", email="ekre@eceannmor.com" },
+]
+description = "Highly space-efficient encoding of cubic binary volumes"
+readme = "README.md"
+requires-python = ">=3"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = "MIT"
+license-files = ["LICENSE"]
+
+[project.urls]
+Homepage = "https://github.com/ekre/octvencode-python"
+Issues = "https://github.com/ekre/octvencode-python/issues"

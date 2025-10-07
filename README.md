@@ -14,11 +14,11 @@ The volume restrictions are as follows:
 
 The volume is encoded as follows:
 ```
-00000000  00000100  00000000  00001111  10110000  ...
-└───────┬────────┘  └──┬───┘  └┬─┘└─────────┬──┘
-        ┆              ┆       ┆            ┆
-2 bytes denoting    a zero   extra padding  ┆
-the edge length,    byte                    ┆
-unsigned integer,                  the encoded octree
+00000000  00000100  00001111  10110000  ...
+└───────┬────────┘  └┬─┘└─────────┬──┘
+        ┆            ┆            ┆
+2 bytes denoting   extra padding  ┆
+the edge length,                  ┆
+unsigned integer,        the encoded data
 little endian
 ```
