@@ -3,10 +3,28 @@ import struct
 
 LATEST_FORMAT_VERSION = "0.0.1"
 
+def reshape_volume_to_cubic(volume: np.ndarray) -> np.ndarray:
+    """
+    Attempts to resize the given volume into 3 equal dimensions
+    Throws if not possible
+    """
+    if not isinstance(volume, np.ndarray):
+        raise TypeError("Provided volume is not a valid Numpy ndarray")
+    
+    size = volume.size
+    new_edge_len = np.cbrt(size)
+    if not int(new_edge_len) == new_edge_len:
+        raise ValueError(f"Could not reshape a volume with dimensions {volume.shape} into a cubic 3d volume")
+    new_edge_len = int(new_edge_len)
+    return np.reshape(volume, (new_edge_len, new_edge_len, new_edge_len))   
+    
+
 def is_volume_slice_homogeneous(vol_slice: np.ndarray) -> bool:
     """
     Checks if the volume slice's values are homogeneous, i.e. if there is a need to split.
     """
+    if not isinstance(vol_slice, np.ndarray):
+        raise TypeError("Provided volume is not a valid Numpy ndarray")
     if vol_slice.size < 2:
         return True
     return np.all(vol_slice == vol_slice.flat[0])
