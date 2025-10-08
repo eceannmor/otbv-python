@@ -5,6 +5,8 @@ This is a Python version of the `octvencode` library that I am working on, in pa
 
 This is an encoding algorithm, not a compression one. The binary volume is encoded as an octree, which is itself encoded in binary.
 
+Requires `numpy`
+
 The volume restrictions are as follows:
 * Non-zero size,
 * Exactly 3 dimensions,
