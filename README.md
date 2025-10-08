@@ -8,19 +8,19 @@ This is an encoding algorithm, not a compression one. The binary volume is encod
 Requires `numpy`
 
 The volume restrictions are as follows:
-* Non-zero size,
-* Exactly 3 dimensions,
-* Cubic,
-* Edge length is a power of 2,
-* Only contains data in a form of 0s and 1s, or data convertible to 0s and 1s.
+* Either a cubic volume, OR resizable to a cubic volume.
+* The edge length of the final volume is a power of 2
+* Only contains data in a form of 0s and 1s, OR data convertible to 0s and 1s (see conversions below).
 
-The volume is encoded as follows:
+
+This project defines the `.octv` (octree volume) file format for encoding the volumes. 
+The `0.0.1` version of the `.octv` file format is structured in the following way:
 ```
-00000000  00000100  00001111  10110000  ...
-└───────┬────────┘  └┬─┘└─────────┬────────
-        ┆            ┆            ┆
-2 bytes denoting   extra padding  ┆
-the edge length,                  ┆
-unsigned integer,        the encoded data
-little endian
+00000000  00000000  00000100  00001111  10110000  ...
+└──┬───┘  └───────┬────────┘  └┬─┘└─────────┬────────
+   ┆              ┆            ┆            ┆
+1 byte denoting   ┆       extra padding     ┆
+the format      2 bytes denoting      the encoded data
+version         the edge length
+         (unsigned integer, little endian) 
 ```
