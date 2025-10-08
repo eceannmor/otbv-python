@@ -1,2 +1,2 @@
-./dist/*
-.pytest_cache/*
+dist/
+.pytest_cache/
