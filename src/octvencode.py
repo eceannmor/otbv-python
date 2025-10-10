@@ -9,24 +9,30 @@ import struct
 __ALLOWED_TYPES = (int, float, np.number, bool, np.bool)
 __LATEST_FORMAT_VERSION = "0.0.1"
 
+def __dtypecheck(dtype) -> bool:
+    return dtype in __ALLOWED_TYPES or any([np.issubdtype(dtype, x) for x in __ALLOWED_TYPES])
+
+def __object_typecheck(obj) -> bool:
+    return isinstance(obj, __ALLOWED_TYPES)
+
 def __convert_or_throw(o) -> np.ndarray:
     """!
     @brief Attempts to convert \p o into a non-empty NumPy array. \n For detailed data conversion rules, check docs 
     @throws TypeError if the conversion is not possible
     @return \p o represented as a numpy array, if possible
     """
-    if isinstance(o, np.ndarray) and o.dtype in __ALLOWED_TYPES:
+    if isinstance(o, np.ndarray) and __dtypecheck(o.dtype):
         return o
-    if isinstance(o, __ALLOWED_TYPES):
+    if __object_typecheck(o):
         return np.array(o)
     try:
         arr = np.asarray(o)
-        if arr.dtype == object and all([isinstance(x, __ALLOWED_TYPES) for x in arr.flat]):
-            return arr
-        else:
-            raise TypeError(f"Provided data is of an unsupported type (received {arr.dtype}, expected {__ALLOWED_TYPES})")
     except:
         raise TypeError("Provided object is not a valid NumPy array and cannot be converted to a NumPy array")
+    if arr.dtype == object and all([__object_typecheck(x) or x for x in arr.flat]):
+        return arr
+    else:
+        raise TypeError(f"Provided data is of an unsupported type (received {arr.dtype}, expected {__ALLOWED_TYPES})")
         
         
 
@@ -67,7 +73,7 @@ def __encode_subvolume_recursive(volume: np.ndarray, x_start: int, x_end: int,
 
     subvolume = volume[x_start:x_end, y_start:y_end, z_start:z_end]
     assert subvolume.size > 0, f"Encountered a subvolume with a size of 0 when encoding the volume. This should never happen. Parameters: {x_start} {x_end} {y_start} {y_end} {z_start} {z_end}. Please open a new issue and attach the data you are trying to encode. https://github.com/eceannmor/octvencode-python/issues"
-    if is_volume_homogeneous(subvolume):
+    if _is_volume_homogeneous(subvolume):
         # leaf
         return f"0{int(subvolume.flat[0])}"
 
@@ -90,14 +96,14 @@ def __encode_subvolume_recursive(volume: np.ndarray, x_start: int, x_end: int,
         for y in (0, 1):
             for x in (0, 1):
                 subvolumes.append(
-                    encode_subvolume_recursive(volume, x_split[x], x_split[x + 1],
+                    __encode_subvolume_recursive(volume, x_split[x], x_split[x + 1],
                                            y_split[y], y_split[y + 1],
                                            z_split[z], z_split[z + 1]))
     # slice
     return f"1{"".join(subvolumes)}"
 
 
-def encode(volume: np.ndarray, format_version = __LATEST_FORMAT_VERSION) -> str:
+def encode(volume: np.ndarray, format_version = __LATEST_FORMAT_VERSION) -> (int, str):
     """
     Encode a bit volume as an octree and convert it to a string.
     """
@@ -121,34 +127,34 @@ def encode(volume: np.ndarray, format_version = __LATEST_FORMAT_VERSION) -> str:
             f"Passed volume with invalid resolution. Expected a power of 2, received {resolution}."
         )
 
-    string = encode_subvolume_recursive(volume, 0, resolution, 0, resolution, 0,
+    string = __encode_subvolume_recursive(volume, 0, resolution, 0, resolution, 0,
                                     resolution)
-    return f"{resolution} {string}"
+    return resolution, string
 
 
 def __decode_subvolume_recursive(tokens, idx, volume, x_start, x_end, y_start, y_end,
                            z_start, z_end):
     if idx >= len(tokens):
         raise ValueError("Unexpected end of encoding")
-
+    
     token = tokens[idx]
     idx = idx + 1
 
     # leaf, read the next value
-    if token == '1':
+    if token == '0':
         val = int(tokens[idx])
         volume[x_start:x_end, y_start:y_end, z_start:z_end] = val
         return idx + 1
 
     # split
-    if token == '0':
+    if token == '1':
         x_split = [x_start, (x_start + x_end) // 2, x_end]
         y_split = [y_start, (y_start + y_end) // 2, y_end]
         z_split = [z_start, (z_start + z_end) // 2, z_end]
         for z in (0, 1):
             for y in (0, 1):
                 for x in (0, 1):
-                    idx = decode_subvolume_recursive(tokens, idx, volume,
+                    idx = __decode_subvolume_recursive(tokens, idx, volume,
                                                  x_split[x], x_split[x + 1],
                                                  y_split[y], y_split[y + 1],
                                                  z_split[z], z_split[z + 1])
@@ -164,20 +170,6 @@ def decode(resolution: int, data: str, format_version = __LATEST_FORMAT_VERSION)
     if not isinstance(data, str):
         raise TypeError("Provided encoding is not a valid string")
 
-    split_encoding = data.split(" ", 1)
-    if len(split_encoding) != 2:
-        raise ValueError(
-            "The encoding is not properly formatted. See the file format definition https://github.com/eceannmor/octvencode-python."
-        )
-
-    resolution, tokens = split_encoding
-    try:
-        resolution = int(resolution)
-    except ValueError:
-        raise ValueError(
-            f"Passed encoding with invalid resolution. Expected a positive number, received {resolution}."
-        )
-
     if resolution < 1:
         raise ValueError(
             f"Passed encoding with invalid resolution. Expected a positive number, received {resolution}."
@@ -185,25 +177,42 @@ def decode(resolution: int, data: str, format_version = __LATEST_FORMAT_VERSION)
 
     volume = np.zeros((resolution, resolution, resolution), dtype=np.uint8)
 
-    final_idx = decode_subvolume_recursive(tokens, 0, volume, 0, resolution, 0,
+    final_idx = __decode_subvolume_recursive(data, 0, volume, 0, resolution, 0,
                                        resolution, 0, resolution)
     return volume
 
 
-def to_file(data: str, format_version = __LATEST_FORMAT_VERSION):
-    size, data = data.split(" ", 1)
-    pad_len = len(data) % 8
+def save(volume: np.ndarray, filename: str, format_version = __LATEST_FORMAT_VERSION):
+    """!
+    @brief Encodes and saves the volume to a file
+    @param filename File name for the encoded volume. Must end with \p .octv
+    """
+    if not filename.endswith('.octv'):
+        raise ValueError(f"Provided filename \"{filename}\" does not end with .octv")
+    
+    resolution, encoding = encode(volume)
+    pad_len = 8 - len(encoding) % 8
     if pad_len:
-        pad = '0' * (8 - pad_len)
-        data = pad + data
+        pad = '0' * pad_len
+        encoding = pad + encoding
+    encoding = [int(encoding[i:i+8], 2) for i in range(0, len(encoding), 8)]
+    encoding = bytes(encoding)
     
-    int_data = [int(data[i:i+8], 2) for i in range(0, len(data), 8)]
-    byte_data = bytes(int_data)
-    
-    with open("file.dat", "wb") as f:
-        f.write(struct.pack("<H", int(size)))
-        f.write(b'\x00')
-        f.write(byte_data)
+    with open(filename, "wb") as f:
+        f.write(struct.pack("<H", int(resolution)))
+        f.write(struct.pack(">B", int(pad_len)))
+        f.write(encoding)
 
-def from_file(filename, format_version = __LATEST_FORMAT_VERSION):
-    pass
+def load(filename, format_version = __LATEST_FORMAT_VERSION) -> np.ndarray:
+    """!
+    @brief Loads and decodes the data from a provided file
+    """
+    with open(filename, "rb") as f:
+        resolution = struct.unpack("<H", f.read(2))
+        pad_len = struct.unpack(">B", f.read(1))
+        bits = f.read()
+        bits = np.unpackbits(np.frombuffer(bits, dtype=np.uint8))
+        data = ''.join(map(str, bits))
+        data = data[pad_len[0]:]
+        volume = decode(resolution[0], data)
+        return volume
