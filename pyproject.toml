@@ -3,7 +3,7 @@ requires = ["hatchling >= 1.26"]
 build-backend = "hatchling.build"
 
 [project]
-name = "octvencode"
+name = "otbv"
 version = "0.0.1"
 authors = [
   { name="Ekre Ceannmor", email="ekre@eceannmor.com" },
@@ -22,5 +22,5 @@ license = "MIT"
 license-files = ["LICENSE"]
 
 [project.urls]
-Homepage = "https://github.com/ekre/octvencode-python"
-Issues = "https://github.com/ekre/octvencode-python/issues"
+Homepage = "https://github.com/ekre/otbv-python"
+Issues = "https://github.com/ekre/otbv-python/issues"

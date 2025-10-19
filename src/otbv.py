@@ -1,6 +1,6 @@
 """!
-@package octvencode
-@file octvencode.py
+@package otbv
+@file otbv.py
 """
 
 import numpy as np
@@ -72,7 +72,7 @@ def __encode_subvolume_recursive(volume: np.ndarray, x_start: int, x_end: int,
     """
 
     subvolume = volume[x_start:x_end, y_start:y_end, z_start:z_end]
-    assert subvolume.size > 0, f"Encountered a subvolume with a size of 0 when encoding the volume. This should never happen. Parameters: {x_start} {x_end} {y_start} {y_end} {z_start} {z_end}. Please open a new issue and attach the data you are trying to encode. https://github.com/eceannmor/octvencode-python/issues"
+    assert subvolume.size > 0, f"Encountered a subvolume with a size of 0 when encoding the volume. This should never happen. Parameters: {x_start} {x_end} {y_start} {y_end} {z_start} {z_end}. Please open a new issue and attach the data you are trying to encode. https://github.com/eceannmor/otbv-python/issues"
     if _is_volume_homogeneous(subvolume):
         # leaf
         return f"0{int(subvolume.flat[0])}"
