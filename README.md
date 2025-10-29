@@ -5,4 +5,3 @@ Requires `numpy`
 See formal specifications in [eceannmor.com/OTBV_specification.html](https://eceannmor.com/OTBV_specification.html)
 
 The volume data is restricted to either binary or data converible to binary. 
-```
