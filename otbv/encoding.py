@@ -1,67 +1,13 @@
 """!
 @package otbv
-@file otbv.py
+@file encoding.py
 """
 
 import numpy as np
-import struct
 
-__ALLOWED_TYPES = (int, float, np.number, bool, np.bool)
-__LATEST_FORMAT_VERSION = "0.0.1"
+from otbv.converter import _is_volume_homogeneous, __convert_or_throw
 
-def __dtypecheck(dtype) -> bool:
-    return dtype in __ALLOWED_TYPES or any([np.issubdtype(dtype, x) for x in __ALLOWED_TYPES])
-
-def __object_typecheck(obj) -> bool:
-    return isinstance(obj, __ALLOWED_TYPES)
-
-def __convert_or_throw(o) -> np.ndarray:
-    """!
-    @brief Attempts to convert \p o into a non-empty NumPy array. \n For detailed data conversion rules, check docs 
-    @throws TypeError if the conversion is not possible
-    @return \p o represented as a numpy array, if possible
-    """
-    if isinstance(o, np.ndarray) and __dtypecheck(o.dtype):
-        return o
-    if __object_typecheck(o):
-        return np.array(o)
-    try:
-        arr = np.asarray(o)
-    except:
-        raise TypeError("Provided object is not a valid NumPy array and cannot be converted to a NumPy array")
-    if arr.dtype == object and all([__object_typecheck(x) or x for x in arr.flat]):
-        return arr
-    else:
-        raise TypeError(f"Provided data is of an unsupported type (received {arr.dtype}, expected {__ALLOWED_TYPES})")
-        
-        
-
-def _reshape_volume_to_cubic(volume: np.ndarray) -> np.ndarray:
-    """!
-    @brief Reshapes a NumPy array into a cube. \n Returns a copy of the data, \p volume remains unchanged
-    @throws ValueError if \p volume cannot be reshaped into a cubic array
-    @returns A cubic NumPy array with the same data as volume
-    """
-    volume = __convert_or_throw(volume)
-    
-    size = volume.size
-    new_edge_len = np.cbrt(size)
-    if not int(new_edge_len) == new_edge_len:
-        raise ValueError(f"Could not reshape a volume with dimensions {volume.shape} into a cubic 3d volume")
-    new_edge_len = int(new_edge_len)
-    return np.reshape(volume, (new_edge_len, new_edge_len, new_edge_len))   
-    
-
-def _is_volume_homogeneous(subvolume: np.ndarray) -> bool:
-    """!
-    @returns True if all elements in \p subvolume are the same
-    @returns False otherwise, or if \p subvolume is empty
-    """
-    subvolume = __convert_or_throw(subvolume)
-    if subvolume.size < 2:
-        return True
-    return np.all(subvolume == subvolume.flat[0])
-
+__all__ = ['encode', 'decode']
 
 def __encode_subvolume_recursive(volume: np.ndarray, x_start: int, x_end: int,
                            y_start: int, y_end: int, z_start: int,
@@ -103,7 +49,7 @@ def __encode_subvolume_recursive(volume: np.ndarray, x_start: int, x_end: int,
     return f"1{"".join(subvolumes)}"
 
 
-def encode(volume: np.ndarray, format_version = __LATEST_FORMAT_VERSION) -> (int, str):
+def encode(volume: np.ndarray) -> (int, str):
     """
     Encode a bit volume as an octree and convert it to a string.
     """
@@ -163,7 +109,7 @@ def __decode_subvolume_recursive(tokens, idx, volume, x_start, x_end, y_start, y
     raise ValueError(f"Invalid token '{token}' at position {idx-1}")
 
 
-def decode(resolution: int, data: str, format_version = __LATEST_FORMAT_VERSION) -> np.ndarray:
+def decode(resolution: int, data: str) -> np.ndarray:
     """
     Decode a string representing an octree and save it as a bit volume
     """
@@ -181,38 +127,3 @@ def decode(resolution: int, data: str, format_version = __LATEST_FORMAT_VERSION)
                                        resolution, 0, resolution)
     return volume
 
-
-def save(volume: np.ndarray, filename: str, format_version = __LATEST_FORMAT_VERSION):
-    """!
-    @brief Encodes and saves the volume to a file
-    @param filename File name for the encoded volume. Must end with \p .octv
-    """
-    if not filename.endswith('.octv'):
-        raise ValueError(f"Provided filename \"{filename}\" does not end with .octv")
-    
-    resolution, encoding = encode(volume)
-    pad_len = 8 - len(encoding) % 8
-    if pad_len:
-        pad = '0' * pad_len
-        encoding = pad + encoding
-    encoding = [int(encoding[i:i+8], 2) for i in range(0, len(encoding), 8)]
-    encoding = bytes(encoding)
-    
-    with open(filename, "wb") as f:
-        f.write(struct.pack("<H", int(resolution)))
-        f.write(struct.pack(">B", int(pad_len)))
-        f.write(encoding)
-
-def load(filename, format_version = __LATEST_FORMAT_VERSION) -> np.ndarray:
-    """!
-    @brief Loads and decodes the data from a provided file
-    """
-    with open(filename, "rb") as f:
-        resolution = struct.unpack("<H", f.read(2))
-        pad_len = struct.unpack(">B", f.read(1))
-        bits = f.read()
-        bits = np.unpackbits(np.frombuffer(bits, dtype=np.uint8))
-        data = ''.join(map(str, bits))
-        data = data[pad_len[0]:]
-        volume = decode(resolution[0], data)
-        return volume

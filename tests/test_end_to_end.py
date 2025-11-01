@@ -1,4 +1,6 @@
-from src import otbv
+from otbv.converter import *
+from otbv.encoding import *
+from otbv.io import *
 import numpy as np
 import pytest
 import os
@@ -13,15 +15,15 @@ class TestEndToEnd:
         byte_array = bytes.fromhex(input_data)
         bits = np.unpackbits(np.frombuffer(byte_array, dtype=np.uint8),
                                 bitorder="little")
-        volume = otbv._reshape_volume_to_cubic(bits)
+        volume = _reshape_volume_to_cubic(bits)
         assert volume.shape == (32,32,32)
         
         try:
-            otbv.save(volume, test_filename)
+            save(volume, test_filename)
             assert os.path.isfile(test_filename)
             assert os.path.getsize(test_filename) > 100
             
-            new_volume = otbv.load(test_filename)
+            new_volume = load(test_filename)
             assert volume.shape == new_volume.shape
             assert (volume == new_volume).all()
         except:
