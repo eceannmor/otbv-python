@@ -1,6 +1,4 @@
-dist/
-.pytest_cache/
-*/__pycache__
-html
-.resources
+.vscode
 build
+pybind11
+otbv-cpp
