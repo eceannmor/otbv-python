@@ -1,7 +1,6 @@
 # otbv-python
-> *WARNING!* This project is a work-in-progress. If you choose to use it, prepare to deal with all issues that come with it
+Python wrapper for [otbv-cpp](https://github.com/eceannmor/otbv-python).
 
-Requires `numpy`
+To build run `install.sh`
+
 See formal specifications in [eceannmor.com/OTBV_specification.html](https://eceannmor.com/OTBV_specification.html)
-
-The volume data is restricted to either binary or data converible to binary. 
