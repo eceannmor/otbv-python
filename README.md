@@ -1,5 +1,5 @@
 # otbv-python
-Python wrapper for [otbv-cpp](https://github.com/eceannmor/otbv-python).
+Python wrapper for [otbv-cpp](https://github.com/eceannmor/otbv-cpp).
 
 To build run `install.sh`
 
