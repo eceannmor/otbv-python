@@ -4,7 +4,9 @@ Module for reading/writing `.otbv` files.
 OTBV is a file format for compressed binary volumes. <br/>
 See formal specifications at [eceannmor.com/OTBV_specification.html](https://eceannmor.com/OTBV_specification.html).
 
-This is a python wrapper around [libotbv](https://github.com/eceannmor/libotbv)
+This is a python wrapper around [libotbv](https://github.com/eceannmor/libotbv).
+
+To build, run `install.sh`
 
 To load a given file, use `otbv.load`. The volume is automatically decompressed and reshaped. 
 You will receive a 3d array.
