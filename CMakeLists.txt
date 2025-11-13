@@ -1,8 +1,9 @@
 cmake_minimum_required(VERSION 4.0)
-project(otbv)
+project(pyotbv)
 
-add_subdirectory(otbv-cpp)
+add_subdirectory(libotbv)
 add_subdirectory(pybind11)
 
 pybind11_add_module(${PROJECT_NAME} src/otbv.cpp)
-target_link_libraries(${PROJECT_NAME} PRIVATE OTBV)
+target_link_libraries(${PROJECT_NAME} PRIVATE otbv)
+set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "otbv")

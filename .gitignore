@@ -1,4 +1,4 @@
 .vscode
 build
 pybind11
-otbv-cpp
+libotbv

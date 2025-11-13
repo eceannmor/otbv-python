@@ -1,6 +1,6 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-#include "otbv.h"
+#include "../libotbv/include/otbv.h"
 
 PYBIND11_MODULE(otbv, handle) {
     handle.doc() = "something";
